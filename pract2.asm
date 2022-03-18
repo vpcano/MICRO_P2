@@ -37,47 +37,51 @@ DET PROC
     ; FIN DE LAS INICIALIZACIONES
     ; COMIENZO DEL PROGRAMA
 
-
-    ;;  IDEA
-    ;;  Usar BX, CX, y DX para guardar en sus partes altas y bajas los indices de los
-    ;;  tres elementos de la matriz que se vayan a multiplicar
-
-    mov bp, 0
-    mov di, 0
-
-    mov bx, 0                   ; A11
-    mov cx, 0103h               ; A22
-    mov dx, 0206h               ; A33
+    mov ax, 0
+    mov cx, 0
+    mov al, matrixA[0][0]       ; A11
+    mov bl, matrixA[1][3]       ; A22
+    mov ch, matrixA[2][6]       ; A33
     call PROD
     add result, ax
 
-    mov bx, 0006h               ; A13
-    mov cx, 0100h               ; A21
-    mov dx, 0203h               ; A32
+    mov ax, 0
+    mov cx, 0
+    mov al, matrixA[2][0]       ; A13
+    mov bl, matrixA[0][3]       ; A21
+    mov ch, matrixA[1][6]       ; A32
     call PROD
     add result, ax
 
-    mov bx, 0003h               ; A12
-    mov cx, 0106h               ; A23
-    mov dx, 0200h               ; A31
+    mov ax, 0
+    mov cx, 0
+    mov al, matrixA[1][0]       ; A12
+    mov bl, matrixA[2][3]       ; A23
+    mov ch, matrixA[0][6]       ; A31
     call PROD
     add result, ax
 
-    mov bx, 0006h               ; A13
-    mov cx, 0103h               ; A22
-    mov dx, 0200h               ; A31
+    mov ax, 0
+    mov cx, 0
+    mov al, matrixA[2][0]       ; A13
+    mov bl, matrixA[1][3]       ; A22
+    mov ch, matrixA[0][6]       ; A31
     call PROD
     sub result, ax
 
-    mov bx, 0000h               ; A11
-    mov cx, 0106h               ; A23
-    mov dx, 0203h               ; A32
+    mov ax, 0
+    mov cx, 0
+    mov al, matrixA[0][0]       ; A11
+    mov bl, matrixA[2][3]       ; A23
+    mov ch, matrixA[1][6]       ; A32
     call PROD
     sub result, ax
 
-    mov bx, 0006h               ; A12
-    mov cx, 0100h               ; A21
-    mov dx, 0206h               ; A33
+    mov ax, 0
+    mov cx, 0
+    mov al, matrixA[1][0]       ; A12
+    mov bl, matrixA[0][3]       ; A21
+    mov ch, matrixA[2][6]       ; A33
     call PROD
     sub result, ax
 
@@ -90,17 +94,13 @@ DET ENDP
 
 PROD PROC
 
-    mov BYTE PTR BP, BH
-    mov BYTE PTR DI, BL
-    mov al, matrixA[BP][DI]
+    ;; Producto de los tres numeros almacenados en AL, BL, y CL.
+    ;; El resultado se guarda en DX
 
-    mov BYTE PTR BP, CH
-    mov BYTE PTR DI, CL
-    imul matrixA[BP][DI]
-
-    mov BYTE PTR BP, DH
-    mov BYTE PTR DI, DL
-    imul matrixA[BP][DI]
+    imul bl     ; AX = AL * BL
+    mov cl, 8   ; Extension de signo
+    sar cx, cl  ; Extension de signo
+    imul cx     ; AX = AX * CX
 
     ret
 PROD ENDP
