@@ -16,7 +16,7 @@ PILA ENDS
 ; DEFINICION DEL SEGMENTO EXTRA
 EXTRA SEGMENT
 
-result DW ?
+result DW 0
 
 EXTRA ENDS
 ;**************************************************************************
@@ -25,7 +25,7 @@ CODE SEGMENT
 ASSUME CS: CODE, DS: DATOS, ES: EXTRA, SS: PILA
 
 ; COMIENZO DEL PROCEDIMIENTO PRINCIPAL
-INICIO PROC
+DET PROC
     ; INICIALIZA LOS REGISTROS DE SEGMENTO CON SU VALOR
     MOV AX, DATOS
     MOV DS, AX
@@ -37,33 +37,82 @@ INICIO PROC
     ; FIN DE LAS INICIALIZACIONES
     ; COMIENZO DEL PROGRAMA
 
-    mov BX, 0
-    mov DI, 2
-    mov al, di
-    mul 3
-    mov di, al
-    mov al, matrixA[BX][DI]
-    mov BYTE PTR result[0], al
 
-    mov BX, 2
-    mov DI, 0
-    mov al, di
-    mul 3
-    mov di, al
-    mov al, matrixA[BX][DI]
-    mov BYTE PTR result[1], al
+    ;;  IDEA
+    ;;  Usar BX, CX, y DX para guardar en sus partes altas y bajas los indices de los
+    ;;  tres elementos de la matriz que se vayan a multiplicar
+
+    mov bp, 0
+    mov di, 0
+
+    mov bx, 0                   ; A11
+    mov cx, 0103h               ; A22
+    mov dx, 0206h               ; A33
+    call PROD
+    add result, ax
+
+    mov bx, 0006h               ; A13
+    mov cx, 0100h               ; A21
+    mov dx, 0203h               ; A32
+    call PROD
+    add result, ax
+
+    mov bx, 0003h               ; A12
+    mov cx, 0106h               ; A23
+    mov dx, 0200h               ; A31
+    call PROD
+    add result, ax
+
+    mov bx, 0006h               ; A13
+    mov cx, 0103h               ; A22
+    mov dx, 0200h               ; A31
+    call PROD
+    sub result, ax
+
+    mov bx, 0000h               ; A11
+    mov cx, 0106h               ; A23
+    mov dx, 0203h               ; A32
+    call PROD
+    sub result, ax
+
+    mov bx, 0006h               ; A12
+    mov cx, 0100h               ; A21
+    mov dx, 0206h               ; A33
+    call PROD
+    sub result, ax
+
 
     ; FIN DEL PROGRAMA
     MOV AX, 4C00H
     INT 21H
-INICIO ENDP
+DET ENDP
+
+
+PROD PROC
+
+    mov BYTE PTR BP, BH
+    mov BYTE PTR DI, BL
+    mov al, matrixA[BP][DI]
+
+    mov BYTE PTR BP, CH
+    mov BYTE PTR DI, CL
+    imul matrixA[BP][DI]
+
+    mov BYTE PTR BP, DH
+    mov BYTE PTR DI, DL
+    imul matrixA[BP][DI]
+
+    ret
+PROD ENDP
+
 
 IMPRIMIR PROC
 
     ret
 IMPRIMIR ENDP
 
+
 ; FIN DEL SEGMENTO DE CODIGO
 CODE ENDS
 ; FIN DEL PROGRAMA INDICANDO DONDE COMIENZA LA EJECUCION
-END INICIO 
+END DET
