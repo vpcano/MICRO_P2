@@ -9,3 +9,4 @@ pract2.exe: pract2.obj
 clean:
 	del pract2.exe
 	del pract2.obj
+	del pract2.map
