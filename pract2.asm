@@ -16,7 +16,14 @@ opts    db "Selecciona una de las siguientes opciones:",10,13
         db 9,"2. Introducir los valores por teclado manualmente.",10,13
         db "Introduce un numero (1 o 2): $"
 
-opcion  db 2, ?, 0, 0
+opcion  db 2, ?, 2 dup(0)
+
+instr1  db 10,13,"Introduce el valor del elemento de la matriz $"
+instr2  db ": $"
+entrada db 5, ?, 5 dup(0)
+
+diez    dw 10
+menos   dw -1
 
 sp_aux  dw ?
 
@@ -70,7 +77,7 @@ MAIN PROC
 
     pedir_valores:
         call clear
-        ; Pedir matriz por teclado
+        call leer_entrada
 
     calcular_det:
         call clear
@@ -205,8 +212,7 @@ MAIN PROC
             jne bin_a_ascii
 
             negativo:
-                mov bx, -1
-                imul bx
+                imul menos
                 mov bx, ax
                 mov dl, '-'
                 mov ah, 02h
@@ -216,8 +222,7 @@ MAIN PROC
 
             bin_a_ascii:
                 mov dx, 0
-                mov bx, 10
-                div bx
+                div diez
                 push dx
                 cmp ax, 0
                 jne bin_a_ascii
@@ -239,7 +244,7 @@ MAIN PROC
             mov cl, 8   ; Extension de signo
             sar ax, cl  ; Extension de signo
 
-            ; Hay 5 espacios para imprimir. Para alinear imprimeremos
+            ; Hay 5 espacios para imprimir. Para alinear imprimiremos
             ; espacios hasta que CX = 0.
             mov cx, 5
             call imprimir_numero
@@ -276,6 +281,119 @@ MAIN PROC
 
             ret
 
+    leer_entrada:
+
+        mov bl, 1
+        mov cl, 1
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 1
+        mov cl, 2
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 1
+        mov cl, 3
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 2
+        mov cl, 1
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 2
+        mov cl, 2
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 2
+        mov cl, 3
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 3
+        mov cl, 1
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 3
+        mov cl, 2
+        call pedir_numero
+        call entrada_numero
+
+        mov bl, 3
+        mov cl, 3
+        call pedir_numero
+        call entrada_numero
+
+        ret
+
+        ; Lee de bl y cl los indices a pedir
+        pedir_numero:
+            lea dx, instr1
+            mov ah, 09h
+            int 21h
+            mov dl, bl
+            add dl, 48
+            mov ah, 02h
+            int 21h
+            mov dl, cl
+            add dl, 48
+            mov ah, 02h
+            int 21h
+            lea dx, instr2
+            mov ah, 09h
+            int 21h
+            mov ah, 0
+            mov al, cl
+            dec ax
+            mov si, ax
+            mov al, bl
+            dec ax
+            mov dl, 3
+            mul dl
+            mov bp, ax
+            lea dx, entrada
+            mov ah, 0ah
+            int 21h
+            ret
+
+        entrada_numero:
+            mov matrixA[si][bp], 0
+            mov bh, 0
+            mov bl, entrada[1]
+            inc bx
+            mov dx, 0
+
+            ascii_a_bin: 
+                mov al, entrada[bx]
+
+                cmp al, '-'
+                je negativo2
+
+                sub al, 48
+                mov cx, dx
+                cmp cx, 0
+                je sumar
+                potencia: 
+                    mul diez
+                    loop potencia
+                sumar:
+                    add matrixA[si][bp], al
+
+                dec bx
+                inc dx
+                cmp bx, 1
+                jne ascii_a_bin
+                ret
+
+                negativo2:
+                    mov al, matrixA[si][bp]
+                    imul menos
+                    mov matrixA[si][bp], al
+                    ret
 
 
 MAIN ENDP
