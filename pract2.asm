@@ -23,7 +23,6 @@ instr2  db ": $"
 entrada db 5, ?, 5 dup(0)
 
 diez    dw 10
-menos   dw -1
 
 sp_aux  dw ?
 
@@ -212,7 +211,7 @@ MAIN PROC
             jne bin_a_ascii
 
             negativo:
-                imul menos
+                neg ax
                 mov bx, ax
                 mov dl, '-'
                 mov ah, 02h
@@ -391,17 +390,12 @@ MAIN PROC
 
                 negativo2:
                     mov al, matrixA[si][bp]
-                    imul menos
+                    neg ax
                     mov matrixA[si][bp], al
                     ret
 
 
 MAIN ENDP
-
-
-
-    
-
 
 ; FIN DEL SEGMENTO DE CODIGO
 CODE ENDS
