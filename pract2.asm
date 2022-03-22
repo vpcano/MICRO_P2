@@ -6,9 +6,9 @@ DATOS SEGMENT
 
 matrixA db 3, 2, -3, 7, -1, 0, 2, -4, 5
 
-fSup    db 23 dup(' '), "      | $"
-fMed	db 10,13,23 dup(' '),"|a| = | $"
-fInf	db 10,13,23 dup(' '),"      | $"
+fSup    db        23 dup(' '), "      | $"
+fMed	db 10,13, 23 dup(' '), "|a| = | $"
+fInf	db 10,13, 23 dup(' '), "      | $"
 igual   db " = $"
 
 opts    db "Selecciona una de las siguientes opciones:",10,13
@@ -30,7 +30,7 @@ DATOS ENDS
 ;**************************************************************************
 ; DEFINICION DEL SEGMENTO DE PILA
 PILA SEGMENT STACK "STACK"
-DB 40H DUP (0) ;ejemplo de inicialización, 64 bytes inicializados a 0
+DB 40H DUP (0)
 PILA ENDS
 ;**************************************************************************
 ; DEFINICION DEL SEGMENTO EXTRA
@@ -58,6 +58,7 @@ MAIN PROC
     ; COMIENZO DEL PROGRAMA
 
     call clear
+
     pedir_opcion:
         ; Imprimir opciones
         lea dx, opts
@@ -72,6 +73,7 @@ MAIN PROC
         je calcular_det
         cmp opcion[2], '2'
         je pedir_valores
+        ; Volver a pedir opcion
         jmp pedir_opcion
 
     pedir_valores:
@@ -87,6 +89,7 @@ MAIN PROC
     MOV AX, 4C00H
     INT 21H
 
+
     clear:
         mov cx, 40
         linea:
@@ -98,6 +101,7 @@ MAIN PROC
         mov ah, 02h
         int 21h
         ret
+
 
     ; Usa la regla de Sarrus
     determinante:
@@ -152,7 +156,7 @@ MAIN PROC
         ret
     
         ; Producto de los tres numeros almacenados en AL, BL, y CL.
-        ; El resultado se guarda en DX
+        ; El resultado se guarda en AX
         prod:
             imul bl     ; AX = AL * BL
             mov cl, 8   ; Extension de signo
@@ -161,8 +165,8 @@ MAIN PROC
             ret
 
 
-    imprimir_resultado:
 
+    imprimir_resultado:
         ; Fila superior
         lea dx, fSup
         mov ah, 09h
@@ -187,7 +191,7 @@ MAIN PROC
         mov bp, 6
         call imprimir_fila
 
-        ; Saltos de linea
+        ; Saltos de linea (para centrarlo)
         mov cx, 10
         n_linea:
             mov dl, 10
@@ -200,26 +204,26 @@ MAIN PROC
 
         ret
 
+
         imprimir_numero:
             ; Guardamos el puntero a pila para recuperarlo despues
             mov sp_aux, sp
 
             ; Si es negativo...
-            mov bx, 8000h
-            and bx, ax
-            cmp bx, 8000h
-            jne bin_a_ascii
+            and ax, 8000h   ; Si es positivo, deja ZF a 1
+            je bin_a_ascii
 
             negativo:
                 neg ax
-                mov bx, ax
+                mov bx, ax  ; Guardo AX en BX para imprimir
                 mov dl, '-'
                 mov ah, 02h
                 int 21h
-                mov ax, bx
-                dec cx
+                mov ax, bx  ; Restauro AX
+                dec cx  ; Imprimo un caracter
 
             bin_a_ascii:
+                ; Meto los restos en la pila
                 mov dx, 0
                 div diez
                 push dx
@@ -227,11 +231,12 @@ MAIN PROC
                 jne bin_a_ascii
 
             imprimir_pila:
+                ; Saco los restos de la pila
                 pop dx 
-                add dl, 48
+                add dl, 48  ; A caracter ASCII
                 mov ah, 02h
                 int 21h
-                dec cx
+                dec cx  ; Imprimo un caracter
                 cmp sp, sp_aux  ; Vacio la pila
                 jne imprimir_pila
 
@@ -262,13 +267,14 @@ MAIN PROC
                 cmp si, 3
                 jne imprimir_fila
 
+            ; Final de la fila
             mov dl, '|'
             mov ah, 02h
             int 21h
             ret
 
-
         imprimir_fila_medio:
+            ; En la fila del medio esta el " = resultado"
             call imprimir_fila
 
             lea dx, igual
@@ -279,6 +285,8 @@ MAIN PROC
             call imprimir_numero
 
             ret
+
+
 
     leer_entrada:
 
@@ -329,69 +337,84 @@ MAIN PROC
 
         ret
 
+
         ; Lee de bl y cl los indices a pedir
         pedir_numero:
+            ; Enunciado de las instrucciones
             lea dx, instr1
             mov ah, 09h
             int 21h
+            ; Primer indice
             mov dl, bl
             add dl, 48
             mov ah, 02h
             int 21h
+            ; Segundo indice
             mov dl, cl
             add dl, 48
             mov ah, 02h
             int 21h
+            ; Dos puntos antes del input
             lea dx, instr2
             mov ah, 09h
             int 21h
+            ; Cargo en SI el primer indice (-1 pq empieza en 0)
             mov ah, 0
             mov al, cl
             dec ax
             mov si, ax
+            ; Cargo en BP el segundo indice (-1 pq empieza en 0 y *3 para direccionar la fila)
             mov al, bl
             dec ax
             mov dl, 3
             mul dl
             mov bp, ax
+            ; Leer input en entrada (asumimos que es correcto)
             lea dx, entrada
             mov ah, 0ah
             int 21h
             ret
 
+
         entrada_numero:
-            mov matrixA[si][bp], 0
+            mov matrixA[si][bp], 0  ; Inicializo a 0
             mov bh, 0
-            mov bl, entrada[1]
-            inc bx
+            mov bl, entrada[1]  ; Num de caracteres leidos
+            inc bx  ; Empiezo a leer desde el final
+            ; DX mide si estamos en las unidades (0),
+            ; en las decenas (1), en las centenas(2)...
             mov dx, 0
 
             ascii_a_bin: 
                 mov al, entrada[bx]
 
+                ; Si hay un menos asumo que he terminado de leer
+                ; (he llegado al principio de la cadena=
                 cmp al, '-'
                 je negativo2
 
-                sub al, 48
-                mov cx, dx
+                sub al, 48  ; De ASCII a decimal
+                mov cx, dx  ; Muevo DX a CX para poder usar loop
                 cmp cx, 0
                 je sumar
                 potencia: 
+                    ; Multiplico por diez 0 veces (unidad),
+                    ; 1 vez (decena), 2 veces (centena)...
                     mul diez
                     loop potencia
                 sumar:
+                    ; Cuando ya he multiplicado sumo el valor
                     add matrixA[si][bp], al
 
+                ; Siguiente cifra
                 dec bx
                 inc dx
-                cmp bx, 1
+                cmp bx, 1 ; Terminamos de leer (principio de la cadena)
                 jne ascii_a_bin
                 ret
 
                 negativo2:
-                    mov al, matrixA[si][bp]
-                    neg ax
-                    mov matrixA[si][bp], al
+                    neg matrixA[si][bp]
                     ret
 
 
