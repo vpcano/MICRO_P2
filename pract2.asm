@@ -210,7 +210,8 @@ MAIN PROC
             mov sp_aux, sp
 
             ; Si es negativo...
-            and ax, 8000h   ; Si es positivo, deja ZF a 1
+            mov bx, ax
+            and bx, 8000h   ; Si es positivo, deja ZF a 1
             je bin_a_ascii
 
             negativo:
