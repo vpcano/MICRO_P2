@@ -24,7 +24,7 @@ entrada db 5, ?, 5 dup(0)
 
 diez    dw 10
 
-sp_aux  dw ?
+buffer  db 6 dup(?)
 
 DATOS ENDS
 ;**************************************************************************
@@ -206,28 +206,24 @@ MAIN PROC
 
 
         imprimir_numero:
-            ; Guardamos el puntero a pila para recuperarlo despues
-            mov sp_aux, sp
+            mov bx, 0
+            mov cx, 0
 
             ; Si es negativo...
-            mov bx, ax
-            and bx, 8000h   ; Si es positivo, deja ZF a 1
-            je bin_a_ascii
+            add ax, 0
+            jns bin_a_ascii
 
             negativo:
                 neg ax
-                mov bx, ax  ; Guardo AX en BX para imprimir
-                mov dl, '-'
-                mov ah, 02h
-                int 21h
-                mov ax, bx  ; Restauro AX
-                dec cx  ; Imprimo un caracter
+                mov buffer[bx], '-'
+                inc bx
 
             bin_a_ascii:
                 ; Meto los restos en la pila
                 mov dx, 0
                 div diez
                 push dx
+                inc cx
                 cmp ax, 0
                 jne bin_a_ascii
 
@@ -235,38 +231,37 @@ MAIN PROC
                 ; Saco los restos de la pila
                 pop dx 
                 add dl, 48  ; A caracter ASCII
-                mov ah, 02h
+                mov buffer[bx], dl
+                inc bx
+                loop imprimir_pila
+
+            mov cx, 5
+            sub cx, bx
+            je fin_num
+
+            imprimir_espacio:
+                mov buffer[bx], ' '
+                inc bx
+                loop imprimir_espacio
+                
+            fin_num:
+                mov buffer[bx], '$'
+                lea dx, buffer
+                mov ah, 09h
                 int 21h
-                dec cx  ; Imprimo un caracter
-                cmp sp, sp_aux  ; Vacio la pila
-                jne imprimir_pila
-
+                
             ret
-
 
         imprimir_fila:
             mov ah, matrixA[si][bp]
             mov cl, 8   ; Extension de signo
             sar ax, cl  ; Extension de signo
 
-            ; Hay 5 espacios para imprimir. Para alinear imprimiremos
-            ; espacios hasta que CX = 0.
-            mov cx, 5
             call imprimir_numero
 
-            cmp cx, 0
-            je siguiente_fila
-
-            imprimir_espacio:
-                mov dl, ' '
-                mov ah, 02h
-                int 21h
-                loop imprimir_espacio
-
-            siguiente_fila:
-                inc si
-                cmp si, 3
-                jne imprimir_fila
+            inc si
+            cmp si, 3
+            jne imprimir_fila
 
             ; Final de la fila
             mov dl, '|'
