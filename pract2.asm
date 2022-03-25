@@ -385,7 +385,7 @@ MAIN PROC
                 mov al, entrada[bx]
 
                 ; Si hay un menos asumo que he terminado de leer
-                ; (he llegado al principio de la cadena=
+                ; (he llegado al principio de la cadena)
                 cmp al, '-'
                 je negativo2
 
